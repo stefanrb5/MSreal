@@ -11,7 +11,6 @@ int main()
 	char tval1, tval2;
 	char *str1;
 	char *str2;
-	int sval1_i,sval2_i,sval3_i,sval4_i;
 	char sval1,sval2,sval3,sval4;
 	size_t num_of_bytes = 6;
 	float ispuna=0;
@@ -21,11 +20,11 @@ int main()
 	int vrednost = 0;
 while(1)
 {
-	printf("faktor_ispune=%d\n", faktor_ispune);
+	printf("faktor_ispune=%f\n", faktor_ispune);
 	fp1 = fopen("/dev/switch", "r");
 	if(fp1==NULL)
 	{
-		puts("problem pri otvaranju\n");
+		puts("problem pri otvaranju /dev/switch\n");
 		return -1;
 	}
 
@@ -34,7 +33,7 @@ while(1)
 
 	if(fclose(fp1))
 	{
-		puts("Problem pri zatvaranju\n");
+		puts("Problem pri zatvaranju /dev/switch\n");
 		return -1;
 	}
 
@@ -45,12 +44,13 @@ while(1)
 	free(str1);
 
 
-	if(sval1_i==0)
+	if(sval1==0)
 	{
 		svetli=0;
 	}
 	else
 	{
+		svetli=1;
 		if(sval2==1) ispuna+=4;
 		if(sval3==1) ispuna+=2;
 		if(sval4==1) ispuna+=1;
@@ -61,7 +61,7 @@ while(1)
 	fp2 = fopen("/dev/button","r" );
 	if(fp2==NULL)
 	{
-		puts("problem pri otvaranju\n");
+		puts("problem pri otvaranju /dev/button\n");
 		return -1;
 	}
 
@@ -70,7 +70,7 @@ while(1)
 
 	if(fclose(fp2))
 	{
-		puts("Problem pri zatvaranju\n");
+		puts("Problem pri zatvaranju /dev/button\n");
 		return -1;
 	}
 	taster_n=0;
@@ -85,15 +85,25 @@ while(1)
 
 		if(taster_n==5 && faktor_ispune<1)
 		{
-			//faktor_ispune+=ispuna;
-			faktor_ispune+=0.01;
+			faktor_ispune+=ispuna;
+		//	faktor_ispune+=0.01;
 			printf("faktor_ispune_povecan\n");
+	//		printf("faktor_ispune %f",faktor_ispune);
+			if(faktor_ispune > 1)
+			{
+				faktor_ispune = 1;
+			}
 		}
 
 		if(taster_n==1 && faktor_ispune>0)
 		{
 			faktor_ispune-=ispuna;
-			printf("faktor_ispune_smanjen\n");
+		//	faktor_ispune-=0.01;
+	//		printf("faktor_ispune_smanjen\n");
+			if(faktor_ispune < 0)
+			{
+				faktor_ispune = 0;
+			}
 		}
 	}
 
@@ -101,7 +111,7 @@ while(1)
 	fp3=fopen("/dev/led","w");
 	if(fp3==NULL)
 	{
-		printf("Problem pri otvaranju\n");
+		printf("Problem pri otvaranju /dev/led\n");
 		return -1;
 	}
 
@@ -116,10 +126,10 @@ while(1)
 		fputs("0x0F\n",fp3);
 		if(fclose(fp3))
 		{
-			printf("problem pri zatvaranju\n");
+			printf("problem pri zatvaranju /dev/led\n");
 			return -1;
 		}
-		usleep(faktor_ispune*period*10);
+		usleep(faktor_ispune*period);
 
 		fp3 = fopen("/dev/led","w");
 		if(fp3==NULL)
@@ -133,7 +143,7 @@ while(1)
 			printf("problem pri zatvaranju\n");
 			return -1;
 		}
-		usleep((1-faktor_ispune)*period*10);
+		usleep((1-faktor_ispune)*period);
 	}
 }
 }
