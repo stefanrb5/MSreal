@@ -99,12 +99,14 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	ret=sscanf(buff, "%s", value);
 
 	return length;*/
-	char command [15];
+	char command [10];
 	int len;
+	
 	int maxdatalen = 30, ncopied;
 	char databuf[maxdatalen];
-	char value[maxdatalen];
+	char value[100];
 	char separator[2];
+	int i;
 
 	if (length<maxdatalen){
 	maxdatalen = length;
@@ -116,12 +118,26 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	databuf[maxdatalen-1] ='\0';
 	printk("databuf: %s",databuf );
 
-	ncopied = sscanf(databuf,"%[^=]= %[^\0]",command,value);
 
-	len = sprintf(databuf,value,maxdatalen);
+	ncopied = sscanf(databuf,"%10[^=]= %100[^\n]",command,value);
+
+
 
 	printk("value: %s", value);
 	printk("command: %s", command);
+	
+		
+	if(strcmp(command, "string")==0)
+	{
+		len = sprintf(databuf,value,maxdatalen);	
+	}
+	else if(strcmp(command, "append")==0)
+	{
+		len = strncat(databuf,value,maxdatalen);
+	}	
+	else if(strcmp(command, "truncate")==0)
+	{
+		
 
 	if(len){
 		printk(KERN_INFO "Succesfully wrote in databuf\n");
