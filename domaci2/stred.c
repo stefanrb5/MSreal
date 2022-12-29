@@ -26,6 +26,13 @@ int stred_close(struct inode *pinode, struct file *pfile);
 ssize_t stred_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset);
 ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset);
 
+static void delete(char string[], char substr[]);
+
+
+
+
+
+
 struct file_operations my_fops =
 {
 	.owner = THIS_MODULE,
@@ -81,9 +88,9 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 
 	char command [10];
 	int len;
-	
-	int maxdatalen = 30, ncopied;
-	
+	char tmpbuffer[100];	
+	int maxdatalen = 100, ncopied;
+	int i,j,k;
 	char value[100];
 	
 	
@@ -92,14 +99,16 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	maxdatalen = length;
 	}
 
-	ncopied = copy_from_user(databuf, buffer, maxdatalen);
+	ncopied = copy_from_user(tmpbuffer, buffer, maxdatalen);
 
 	
-	databuf[maxdatalen-1] ='\0';
+	tmpbuffer[maxdatalen-1] ='\0';
+	databuf[maxdatalen-1] = '\0';
+
 	printk("databuf: %s",databuf );
 
 
-	ncopied = sscanf(databuf,"%10[^=]= %100[^\n]",command,value);
+	ncopied = sscanf(tmpbuffer,"%10[^=]= %100[^\n]",command,value);
 
 
 
@@ -118,17 +127,33 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 			
 		
 	}	
-//	else if(strcmp(command, "truncate")==0)
-//	{
+	else if(strcmp(command, "truncate")==0)
+	{
+		len = strlen(databuf);
+		 kstrtoint(value,10,k);
+		while(k!=0)
+		{
+			databuf[len-k] = NULL;
+			k--;
+		}
+	}
 	
 	else if(strcmp(command, "remove")==0)
 	{
 	
-		len = strreplace(databuf,value, NULL);
-		printk("bufferremove: %s", databuf);
+		delete(databuf,value);
+	
 
 	}
 
+	else if(strcmp(command, "clear")==0)
+	{
+		len = strlen(databuf);
+		for(i = 0; i<len;i++)
+		{
+			databuf[i] = '0';
+		}
+	}
 
 
 
@@ -147,6 +172,35 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	return length;
 	
 }
+
+void delete(char string[], char substr[])
+{
+	int i = 0;
+	int string_length = strlen(string);
+	int substr_length = strlen(substr);
+	int j;
+
+	while(i < string_length)
+	{
+		if(strstr(&string[i], substr) == &string[i])
+		{
+			string_length -= substr_length;
+
+			for(j=i; j< string_length;j++)
+				string[j] = string[j+substr_length];
+		}
+		else i++;
+	}
+	string[i] = '\0';
+}
+
+
+
+
+
+
+
+
 
 static int __init stred_init(void)
 {
