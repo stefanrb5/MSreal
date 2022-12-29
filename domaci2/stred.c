@@ -17,7 +17,7 @@ static struct class *my_class;
 static struct device *my_device;
 static struct cdev *my_cdev;
 
-char lifo[100];
+char databuf[100];
 int pos = 0;
 int endRead = 0;
 
@@ -61,7 +61,7 @@ ssize_t stred_read(struct file *pfile, char __user *buffer, size_t length, loff_
 	if(pos > 0)
 	{
 		pos --;
-		len = scnprintf(buff, BUFF_SIZE, "%c", lifo[pos]);
+		len = scnprintf(buff, BUFF_SIZE, "%c", databuf[pos]);
 		ret = copy_to_user(buffer, buff, len);
 		if(ret)
 			return -EFAULT;
@@ -70,7 +70,7 @@ ssize_t stred_read(struct file *pfile, char __user *buffer, size_t length, loff_
 	}
 	else
 	{
-			printk(KERN_WARNING "Lifo is empty\n"); 
+			printk(KERN_WARNING "Databuf is empty\n"); 
 	}
 
 	return len;
@@ -78,35 +78,15 @@ ssize_t stred_read(struct file *pfile, char __user *buffer, size_t length, loff_
 
 ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset) 
 {
-/*	char buff[BUFF_SIZE];
-	char value[10]={"aaaaaa"};
-	int ret;
-	int len;
-	char command[15];
-	
 
-	ret = copy_from_user(buff, buffer, length);
-	if(ret)
-		return -EFAULT;
-	buff[length-1] = '\0';
-
-		ret = sscanf(buff,"%s[=/]%s",command,value);
-		len = strlcpy(buff,value,BUFF_SIZE);
-
-
-
-
-	ret=sscanf(buff, "%s", value);
-
-	return length;*/
 	char command [10];
 	int len;
 	
 	int maxdatalen = 30, ncopied;
-	char databuf[maxdatalen];
+	
 	char value[100];
-	char separator[2];
-	int i;
+	
+	
 
 	if (length<maxdatalen){
 	maxdatalen = length;
@@ -133,15 +113,31 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	}
 	else if(strcmp(command, "append")==0)
 	{
-		len = strncat(databuf,value,maxdatalen);
-	}	
-	else if(strcmp(command, "truncate")==0)
-	{
+
+		len= strcat(databuf,value);
+			
 		
+	}	
+//	else if(strcmp(command, "truncate")==0)
+//	{
+	
+	else if(strcmp(command, "remove")==0)
+	{
+	
+		len = strreplace(databuf,value, NULL);
+		printk("bufferremove: %s", databuf);
+
+	}
+
+
+
+
+
 
 	if(len){
 		printk(KERN_INFO "Succesfully wrote in databuf\n");
 		printk("buffer: %s", databuf);
+		
 	}
 	else
 		printk(KERN_INFO "failed to write in databuf\n");
@@ -158,8 +154,8 @@ static int __init stred_init(void)
 	int i=0;
 
 	//Initialize array
-	for (i=0; i<10; i++)
-		lifo[i] = 0;
+	for (i=0; i<100; i++)
+		databuf[i] = 0;
 
    ret = alloc_chrdev_region(&my_dev_id, 0, 1, "stred");
    if (ret){
