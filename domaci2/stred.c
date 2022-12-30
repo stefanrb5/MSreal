@@ -29,10 +29,6 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 static void delete(char string[], char substr[]);
 
 
-
-
-
-
 struct file_operations my_fops =
 {
 	.owner = THIS_MODULE,
@@ -57,40 +53,43 @@ int stred_close(struct inode *pinode, struct file *pfile)
 
 ssize_t stred_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset) 
 {
-	int ret;
+	int ret,i;
 	char buff[BUFF_SIZE];
-	long int len = 0;
+	long int len ;
+	char newline[3] = "\n";
+	
 	if (endRead){
 		endRead = 0;
+		pos = 0;
+		printk(KERN_INFO "Succesfully read from file\n");
 		return 0;
 	}
-
-	if(pos > 0)
-	{
-		pos --;
+			
 		len = scnprintf(buff, BUFF_SIZE, "%c", databuf[pos]);
+		 
 		ret = copy_to_user(buffer, buff, len);
+		
 		if(ret)
 			return -EFAULT;
-		printk(KERN_INFO "Succesfully read\n");
-		endRead = 1;
-	}
-	else
-	{
-			printk(KERN_WARNING "Databuf is empty\n"); 
-	}
+		pos++;
+		if(pos==100){
+			endRead =1;
+			copy_to_user(buffer,newline,len);
+		}
+		
 
+	
 	return len;
 }
 
 ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset) 
 {
 
-	char command [10];
+	char command [15];
 	int len;
 	char tmpbuffer[100];	
 	int maxdatalen = 100, ncopied;
-	int i,j,k;
+	int i,j,k=5;
 	char value[100];
 	
 	
@@ -105,7 +104,7 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	tmpbuffer[maxdatalen-1] ='\0';
 	databuf[maxdatalen-1] = '\0';
 
-	printk("databuf: %s",databuf );
+	printk("tmpbuf: %s",tmpbuffer );
 
 
 	ncopied = sscanf(tmpbuffer,"%10[^=]= %100[^\n]",command,value);
@@ -130,7 +129,7 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	else if(strcmp(command, "truncate")==0)
 	{
 		len = strlen(databuf);
-		 kstrtoint(value,10,k);
+	
 		while(k!=0)
 		{
 			databuf[len-k] = NULL;
@@ -149,6 +148,7 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 	else if(strcmp(command, "clear")==0)
 	{
 		len = strlen(databuf);
+
 		for(i = 0; i<len;i++)
 		{
 			databuf[i] = '0';
@@ -161,7 +161,7 @@ ssize_t stred_write(struct file *pfile, const char __user *buffer, size_t length
 
 	if(len){
 		printk(KERN_INFO "Succesfully wrote in databuf\n");
-		printk("buffer: %s", databuf);
+		printk("databuf: %s", databuf);
 		
 	}
 	else
